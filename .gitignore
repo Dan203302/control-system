@@ -42,3 +42,4 @@ bun.lockb
 .env
 .vscode/
 .idea/
+uploads/

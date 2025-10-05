@@ -14,11 +14,17 @@ export async function POST(req: Request) {
   }
   const existing = await db.select({ id: users.id }).from(users).limit(1);
   if (existing.length === 0) {
-    await db.insert(roles).values([{ name: 'admin' }, { name: 'manager' }, { name: 'user' }]).onConflictDoNothing();
+    await db
+      .insert(roles)
+      .values([{ name: 'admin' }, { name: 'manager' }, { name: 'engineer' }, { name: 'observer' }])
+      .onConflictDoNothing();
     const admin = await db.select({ id: roles.id }).from(roles).where(eq(roles.name, 'admin')).limit(1);
     const hash = await bcrypt.hash(password, 10);
     if (admin.length > 0) {
-      await db.insert(users).values({ email, passwordHash: hash, fullName: 'Администратор', roleId: admin[0].id }).onConflictDoNothing();
+      await db
+        .insert(users)
+        .values({ email, passwordHash: hash, fullName: 'Администратор', roleId: admin[0].id })
+        .onConflictDoNothing();
     }
   }
   const found = await db
