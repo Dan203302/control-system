@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: control_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-control}
+      POSTGRES_USER: ${POSTGRES_USER:-control}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-control}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: control_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Compose подставит ваши значения из .env. DATABASE_URL собираем из параметров БД.
+      DATABASE_URL: postgres://${POSTGRES_USER:-control}:${POSTGRES_PASSWORD:-control}@db:5432/${POSTGRES_DB:-control}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+      JWT_EXPIRES: ${JWT_EXPIRES:-7d}
+      COOKIE_NAME: ${COOKIE_NAME:-token}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: 1
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      - uploads:/app/uploads
+
+volumes:
+  pgdata:
+  uploads:
