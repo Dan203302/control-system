@@ -50,6 +50,15 @@ type FileRow = {
   createdAt: string
 }
 
+type HistoryRow = {
+  id: number
+  defectId: number
+  actorId: string | null
+  action: string
+  details: string | null
+  createdAt: string
+}
+
 type Me = { id: string; role: string; email: string; name: string }
 type UserOpt = { id: string; fullName: string; role: string }
 
@@ -104,6 +113,7 @@ export default function Page() {
   const [editAssignee, setEditAssignee] = useState("")
   const [editDueDate, setEditDueDate] = useState("")
   const [users, setUsers] = useState<UserOpt[]>([])
+  const [history, setHistory] = useState<HistoryRow[]>([])
 
   const canManage = useMemo(() => {
     if (!me || !row) return false
@@ -135,6 +145,8 @@ export default function Page() {
       setComments(cs)
       setFiles(fs)
       setUsers(us)
+      const hs = await apiGet<HistoryRow[]>(`/api/defects/${id}/history`)
+      setHistory(hs)
     } catch {
       setError("Ошибка загрузки")
     } finally {
@@ -372,6 +384,28 @@ export default function Page() {
                     <Button size="sm" color="danger" isDisabled={saving} onPress={() => deleteFile(f)}>Удалить</Button>
                   )}
                 </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
+
+      <Card className="p-6 space-y-4">
+        <div className="text-lg font-semibold">История изменений</div>
+        <Table aria-label="history">
+          <TableHeader>
+            <TableColumn>Дата</TableColumn>
+            <TableColumn>Действие</TableColumn>
+            <TableColumn>Автор</TableColumn>
+            <TableColumn>Детали</TableColumn>
+          </TableHeader>
+          <TableBody emptyContent="Нет записей" items={history}>
+            {(h: HistoryRow) => (
+              <TableRow key={h.id}>
+                <TableCell>{new Date(h.createdAt).toLocaleString()}</TableCell>
+                <TableCell>{h.action}</TableCell>
+                <TableCell className="truncate max-w-[200px]">{h.actorId || ""}</TableCell>
+                <TableCell className="truncate max-w-[400px]">{h.details ? (h.details.length > 160 ? h.details.slice(0,160) + "…" : h.details) : ""}</TableCell>
               </TableRow>
             )}
           </TableBody>
