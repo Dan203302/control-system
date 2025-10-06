@@ -10,6 +10,7 @@ import { Alert } from "@heroui/alert"
 import { Chip } from "@heroui/chip"
 import { apiGet, apiPost } from "@/lib/api"
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal"
+import Link from "next/link"
 
 type Row = {
   id: number
@@ -246,12 +247,17 @@ export default function Page() {
               <TableColumn>Исполнитель</TableColumn>
               <TableColumn>Дедлайн</TableColumn>
               <TableColumn>Создано</TableColumn>
+              <TableColumn>Действия</TableColumn>
             </TableHeader>
             <TableBody emptyContent="Нет данных" items={items}>
               {(item: Row) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.id}</TableCell>
-                  <TableCell>{item.title}</TableCell>
+                  <TableCell>
+                    <Link href={`/defects/${item.id}`} className="text-primary underline underline-offset-2 hover:opacity-90">
+                      {item.title}
+                    </Link>
+                  </TableCell>
                   <TableCell><Chip color={statusColor(item.status)} size="sm" variant="flat">{item.status}</Chip></TableCell>
                   <TableCell>{item.priority}</TableCell>
                   <TableCell>{item.projectId}</TableCell>
@@ -260,6 +266,9 @@ export default function Page() {
                   <TableCell className="truncate max-w-[160px]">{item.assigneeId ?? ""}</TableCell>
                   <TableCell>{item.dueDate ? new Date(item.dueDate).toLocaleDateString() : ""}</TableCell>
                   <TableCell>{item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}</TableCell>
+                  <TableCell>
+                    <Button as={Link} href={`/defects/${item.id}`} size="sm" variant="flat">Открыть</Button>
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>

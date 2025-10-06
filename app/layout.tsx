@@ -4,6 +4,7 @@ import {Viewport } from "next";
 import clsx from "clsx";
 
 import { Providers } from "./providers";
+import Topbar from "@/components/Topbar";
 
 
 import { fontSans } from "@/config/fonts";
@@ -34,6 +35,7 @@ export default function RootLayout({
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
           <div className="relative flex flex-col h-screen">
 
+            <Topbar />
             <main>
               {children}
             </main>

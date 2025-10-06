@@ -5,6 +5,7 @@ import { Card } from '@heroui/card'
 import { Input } from '@heroui/input'
 import { Button } from '@heroui/button'
 import { Alert } from '@heroui/alert'
+import Link from 'next/link'
 
 export default function Page() {
   const router = useRouter()
@@ -33,6 +34,9 @@ export default function Page() {
           {error && <Alert color="danger" title={error} />}
           <Button color="primary" type="submit" isLoading={loading} className="w-full">Войти</Button>
         </form>
+        <div className="text-center text-sm text-default-500">
+          Нет аккаунта? <Button as={Link} href="/register" size="sm" variant="light">Зарегистрироваться</Button>
+        </div>
       </Card>
     </div>
   )

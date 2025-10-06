@@ -16,7 +16,7 @@ export default async function Page() {
   const role = String(payload.role || '')
   return (
     <div className="flex items-center justify-center h-screen p-4">
-      <Card className="max-w-xl w-full p-6 text-center text-lg">Вы авторизовано под {name} и ролью {role}</Card>
+      <Card className="max-w-xl w-full p-6 text-center text-lg">Вы авторизованы под {name} и ролью {role}</Card>
     </div>
   )
 }

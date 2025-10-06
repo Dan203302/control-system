@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "next/navigation"
 import { Card } from "@heroui/card"
 import { Chip } from "@heroui/chip"
@@ -114,6 +114,7 @@ export default function Page() {
   const [editDueDate, setEditDueDate] = useState("")
   const [users, setUsers] = useState<UserOpt[]>([])
   const [history, setHistory] = useState<HistoryRow[]>([])
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const canManage = useMemo(() => {
     if (!me || !row) return false
@@ -363,7 +364,8 @@ export default function Page() {
       <Card className="p-6 space-y-4">
         <div className="text-lg font-semibold">Файлы</div>
         <div className="flex items-center gap-2">
-          <input type="file" onChange={onUploadFile} />
+          <input ref={fileInputRef} type="file" onChange={onUploadFile} className="hidden" />
+          <Button size="sm" color="primary" isDisabled={saving} onPress={() => fileInputRef.current?.click()}>Загрузить файл</Button>
         </div>
         <Table aria-label="files">
           <TableHeader>
