@@ -6,10 +6,11 @@ import { getSession } from '@/lib/auth'
 import { getPath } from '@/lib/storage'
 import fs from 'node:fs'
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  const id = Number(params.id)
+  const p = await params
+  const id = Number(p.id)
   const rows = await db.select().from(files).where(eq(files.id, id)).limit(1)
   if (!rows.length) return NextResponse.json({ error: 'not_found' }, { status: 404 })
   const row = rows[0]

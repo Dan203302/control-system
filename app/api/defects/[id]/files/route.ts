@@ -5,18 +5,20 @@ import { eq, and, asc } from 'drizzle-orm'
 import { getSession, allowRoles } from '@/lib/auth'
 import { saveFile } from '@/lib/storage'
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  const defectId = Number(params.id)
+  const p = await params
+  const defectId = Number(p.id)
   const items = await db.select().from(files).where(eq(files.defectId, defectId)).orderBy(asc(files.createdAt))
   return NextResponse.json(items)
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
   if (!session || !allowRoles(session, ['admin', 'manager', 'engineer'])) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-  const defectId = Number(params.id)
+  const p = await params
+  const defectId = Number(p.id)
   const form = await req.formData()
   const file = form.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'invalid' }, { status: 400 })

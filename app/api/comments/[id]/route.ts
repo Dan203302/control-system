@@ -4,19 +4,21 @@ import { comments } from '@/db/schema'
 import { and, eq, isNull } from 'drizzle-orm'
 import { getSession, allowRoles } from '@/lib/auth'
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  const id = Number(params.id)
+  const p = await params
+  const id = Number(p.id)
   const rows = await db.select().from(comments).where(and(eq(comments.id, id), isNull(comments.deletedAt))).limit(1)
   if (rows.length === 0) return NextResponse.json({ error: 'not_found' }, { status: 404 })
   return NextResponse.json(rows[0])
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  const id = Number(params.id)
+  const p = await params
+  const id = Number(p.id)
   const rows = await db.select().from(comments).where(eq(comments.id, id)).limit(1)
   if (!rows.length || rows[0].deletedAt) return NextResponse.json({ error: 'not_found' }, { status: 404 })
   const row = rows[0]
@@ -29,10 +31,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   return NextResponse.json(updated[0])
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  const id = Number(params.id)
+  const p = await params
+  const id = Number(p.id)
   const rows = await db.select().from(comments).where(eq(comments.id, id)).limit(1)
   if (!rows.length || rows[0].deletedAt) return NextResponse.json({ error: 'not_found' }, { status: 404 })
   const row = rows[0]
