@@ -8,7 +8,8 @@ import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from 
 import { Spinner } from "@heroui/spinner"
 import { Alert } from "@heroui/alert"
 import { Chip } from "@heroui/chip"
-import { apiGet } from "@/lib/api"
+import { apiGet, apiPost } from "@/lib/api"
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal"
 
 type Row = {
   id: number
@@ -26,6 +27,7 @@ type Row = {
 type ListResponse = { items: Row[]; page: number; limit: number }
 
 type Opt = { id: number; name: string }
+type UserOpt = { id: string; fullName: string; role: string }
 
 const statuses = [
   { key: "new", label: "Новая" },
@@ -71,17 +73,28 @@ export default function Page() {
   const [projects, setProjects] = useState<Opt[]>([])
   const [objects, setObjects] = useState<Opt[]>([])
   const [stages, setStages] = useState<Opt[]>([])
+  const [users, setUsers] = useState<UserOpt[]>([])
+  const [createOpen, setCreateOpen] = useState(false)
+  const [cTitle, setCTitle] = useState("")
+  const [cProjectId, setCProjectId] = useState<number | null>(null)
+  const [cObjectId, setCObjectId] = useState<number | null>(null)
+  const [cStageId, setCStageId] = useState<number | null>(null)
+  const [cPriority, setCPriority] = useState("medium")
+  const [cAssigneeId, setCAssigneeId] = useState<string>("")
+  const [cDueDate, setCDueDate] = useState("")
 
   async function loadOptions() {
     try {
-      const [p, o, s] = await Promise.all([
+      const [p, o, s, u] = await Promise.all([
         apiGet<Opt[]>("/api/projects"),
         apiGet<Opt[]>("/api/objects"),
         apiGet<Opt[]>("/api/stages"),
+        apiGet<UserOpt[]>("/api/users"),
       ])
       setProjects(p)
       setObjects(o)
       setStages(s)
+      setUsers(u)
     } catch {}
   }
 
@@ -127,6 +140,37 @@ export default function Page() {
     setSortDir("desc")
     setLimit(10)
     setPage(1)
+  }
+
+  async function createDefect() {
+    if (!cTitle.trim() || !cProjectId || !cObjectId) return
+    setLoading(true)
+    setError("")
+    try {
+      await apiPost("/api/defects", {
+        title: cTitle.trim(),
+        projectId: cProjectId,
+        objectId: cObjectId,
+        stageId: cStageId || null,
+        priority: cPriority,
+        assigneeId: cAssigneeId || null,
+        dueDate: cDueDate ? new Date(cDueDate).toISOString() : null,
+      })
+      setCreateOpen(false)
+      setCTitle("")
+      setCProjectId(null)
+      setCObjectId(null)
+      setCStageId(null)
+      setCPriority("medium")
+      setCAssigneeId("")
+      setCDueDate("")
+      setPage(1)
+      load()
+    } catch {
+      setError("Не удалось создать дефект")
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -180,6 +224,7 @@ export default function Page() {
         <div className="flex gap-2">
           <Button color="primary" onPress={() => { setPage(1); load() }}>Найти</Button>
           <Button variant="flat" onPress={resetFilters}>Сбросить</Button>
+          <Button color="secondary" onPress={() => setCreateOpen(true)}>Создать дефект</Button>
         </div>
       </Card>
 
@@ -229,6 +274,39 @@ export default function Page() {
           <Button variant="flat" isDisabled={items.length < limit} onPress={() => setPage(p => p + 1)}>Вперёд</Button>
         </div>
       </div>
+
+      <Modal isOpen={createOpen} onOpenChange={setCreateOpen} backdrop="blur">
+        <ModalContent>
+          {() => (
+            <>
+              <ModalHeader>Создать дефект</ModalHeader>
+              <ModalBody className="space-y-3">
+                <Input label="Заголовок" value={cTitle} onValueChange={setCTitle} isRequired />
+                <Select label="Проект" selectedKeys={cProjectId ? [String(cProjectId)] : []} onSelectionChange={(k) => setCProjectId(Number(Array.from(k)[0] || 0) || null)}>
+                  {projects.map(p => <SelectItem key={p.id}>{p.name}</SelectItem>)}
+                </Select>
+                <Select label="Объект" selectedKeys={cObjectId ? [String(cObjectId)] : []} onSelectionChange={(k) => setCObjectId(Number(Array.from(k)[0] || 0) || null)}>
+                  {objects.map(o => <SelectItem key={o.id}>{o.name}</SelectItem>)}
+                </Select>
+                <Select label="Этап" selectedKeys={cStageId ? [String(cStageId)] : []} onSelectionChange={(k) => setCStageId(Number(Array.from(k)[0] || 0) || null)}>
+                  {stages.map(s => <SelectItem key={s.id}>{s.name}</SelectItem>)}
+                </Select>
+                <Select label="Приоритет" selectedKeys={[cPriority]} onSelectionChange={(k) => setCPriority(String(Array.from(k)[0] || "medium"))}>
+                  {priorities.map(p => <SelectItem key={p.key}>{p.label}</SelectItem>)}
+                </Select>
+                <Select label="Исполнитель" selectedKeys={cAssigneeId ? [cAssigneeId] : []} onSelectionChange={(k) => setCAssigneeId(String(Array.from(k)[0] || ""))}>
+                  {users.map(u => <SelectItem key={u.id}>{u.fullName} ({u.role})</SelectItem>)}
+                </Select>
+                <Input type="date" label="Дедлайн" value={cDueDate} onValueChange={setCDueDate} />
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="flat" onPress={() => setCreateOpen(false)}>Отмена</Button>
+                <Button color="primary" onPress={createDefect}>Создать</Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   )
 }

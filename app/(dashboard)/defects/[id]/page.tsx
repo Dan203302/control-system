@@ -51,6 +51,7 @@ type FileRow = {
 }
 
 type Me = { id: string; role: string; email: string; name: string }
+type UserOpt = { id: string; fullName: string; role: string }
 
 const statusLabels: Record<string, string> = {
   new: "Новая",
@@ -102,6 +103,7 @@ export default function Page() {
   const [editPriority, setEditPriority] = useState("medium")
   const [editAssignee, setEditAssignee] = useState("")
   const [editDueDate, setEditDueDate] = useState("")
+  const [users, setUsers] = useState<UserOpt[]>([])
 
   const canManage = useMemo(() => {
     if (!me || !row) return false
@@ -125,12 +127,14 @@ export default function Page() {
       setEditPriority(r.priority)
       setEditAssignee(r.assigneeId || "")
       setEditDueDate(r.dueDate ? r.dueDate.slice(0, 10) : "")
-      const [cs, fs] = await Promise.all([
+      const [cs, fs, us] = await Promise.all([
         apiGet<Comment[]>(`/api/defects/${id}/comments`),
         apiGet<FileRow[]>(`/api/defects/${id}/files`),
+        apiGet<UserOpt[]>(`/api/users`),
       ])
       setComments(cs)
       setFiles(fs)
+      setUsers(us)
     } catch {
       setError("Ошибка загрузки")
     } finally {
@@ -280,7 +284,9 @@ export default function Page() {
             {priorityOpts.map(p => <SelectItem key={p.key}>{p.label}</SelectItem>)}
           </Select>
           <Input label="Описание" value={editDescription} onValueChange={setEditDescription} isDisabled={!canManage} />
-          <Input label="Исполнитель ID" value={editAssignee} onValueChange={setEditAssignee} isDisabled={!canManage} />
+          <Select label="Исполнитель" selectedKeys={editAssignee ? [editAssignee] : []} onSelectionChange={(k) => setEditAssignee(String(Array.from(k)[0] || ""))} isDisabled={!canManage}>
+            {users.map(u => <SelectItem key={u.id}>{u.fullName} ({u.role})</SelectItem>)}
+          </Select>
           <Input type="date" label="Дедлайн" value={editDueDate} onValueChange={setEditDueDate} isDisabled={!canManage} />
           <Input isReadOnly label="Проект" value={String(row.projectId)} />
           <Input isReadOnly label="Объект" value={String(row.objectId)} />
