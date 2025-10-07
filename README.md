@@ -11,11 +11,6 @@
 [![VS Code](https://img.shields.io/badge/VS%20Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://code.visualstudio.com/)
 [![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)](https://git-scm.com/)
 
-<p align="center">
-  <img src="./screenshot.png" alt="Интерфейс системы" width="1200"/>
-  <br/>
-  <i>Список дефектов, фильтры, карточка дефекта, файлы и комментарии</i>
-</p>
 
 Control System — веб‑приложение на Next.js для ведения дефектов, проектов, объектов и этапов с RBAC, файлами, комментариями и экспортом отчётов. Реализованы App Router + Route Handlers, PostgreSQL + Drizzle ORM и локальное хранилище вложений.
 
