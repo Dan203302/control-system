@@ -1,0 +1,296 @@
+{
+  "info": {
+    "_postman_id": "d8ce5c8c-2c3a-4c52-9c61-7f2f71a7a0b1",
+    "name": "Control System API Tests",
+    "description": "Коллекция тестов для Control System (Next.js, Route Handlers). Содержит сценарии: сидирование демо-данных, аутентификация, CRUD справочников, дефекты, комментарии, файлы, история и экспорт отчетов.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Dev / Seed demo data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.expect(body.ok).to.be.true;",
+              "pm.collectionVariables.set('demo_password', 'demo1234');",
+              "pm.collectionVariables.set('admin_email', 'admin@demo.local');",
+              "pm.collectionVariables.set('manager_email', 'manager@demo.local');",
+              "pm.collectionVariables.set('engineer_email', 'engineer@demo.local');",
+              "pm.collectionVariables.set('observer_email', 'observer@demo.local');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/dev/seed",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "dev",
+            "seed"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "1.1 Sign in (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Set-Cookie present\", () => pm.expect(pm.response.headers.get('set-cookie')).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{demo_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/signin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "signin"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j).to.be.an('object');",
+                  "pm.expect(j.email, 'email exists').to.exist;"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/auth/me", "host": ["{{base_url}}"], "path": ["api", "auth", "me"] }
+          },
+          "response": []
+        },
+        {
+          "name": "1.3 Sign out",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/auth/signout", "host": ["{{base_url}}"], "path": ["api", "auth", "signout"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Reference (projects/objects/stages)",
+      "item": [
+        {
+          "name": "2.1 Projects: list & capture id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const arr = pm.response.json();",
+                  "pm.expect(arr).to.be.an('array');",
+                  "if (arr.length) pm.collectionVariables.set('project_id', arr[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/api/projects", "host": ["{{base_url}}"], "path": ["api", "projects"] } },
+          "response": []
+        },
+        {
+          "name": "2.2 Projects: create",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('201/200', () => pm.expect([200,201]).to.include(pm.response.code));","const j=pm.response.json(); pm.expect(j.id||j.insertId).to.exist;"] } } ],
+          "request": {
+            "method": "POST",
+            "header": [ {"key":"Content-Type","value":"application/json"} ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"API Project\",\n  \"description\": \"Created from Postman\"\n}" },
+            "url": { "raw": "{{base_url}}/api/projects", "host": ["{{base_url}}"], "path": ["api","projects"] }
+          },
+          "response": []
+        },
+        {
+          "name": "2.3 Objects: list & capture id",
+          "event": [ { "listen": "test", "script": { "type":"text/javascript", "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));","const arr = pm.response.json(); pm.expect(arr).to.be.an('array'); if(arr.length) pm.collectionVariables.set('object_id', arr[0].id);"] } } ],
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/api/objects", "host":["{{base_url}}"], "path":["api","objects"] } },
+          "response": []
+        },
+        {
+          "name": "2.4 Objects: create",
+          "event": [ { "listen": "test", "script": { "type":"text/javascript", "exec": ["pm.test('200/201', () => pm.expect([200,201]).to.include(pm.response.code));"] } } ],
+          "request": {
+            "method": "POST",
+            "header": [ {"key":"Content-Type","value":"application/json"} ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Корпус Z\",\n  \"address\": \"ул. Тестовая, 9\",\n  \"projectId\": {{project_id}}\n}" },
+            "url": { "raw": "{{base_url}}/api/objects", "host":["{{base_url}}"], "path":["api","objects"] }
+          },
+          "response": []
+        },
+        {
+          "name": "2.5 Stages: list & capture id",
+          "event": [ { "listen": "test", "script": { "type":"text/javascript", "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));","const arr = pm.response.json(); pm.expect(arr).to.be.an('array'); if(arr.length) pm.collectionVariables.set('stage_id', arr[0].id);"] } } ],
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/api/stages", "host":["{{base_url}}"], "path":["api","stages"] } },
+          "response": []
+        },
+        {
+          "name": "2.6 Stages: create",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('200/201', () => pm.expect([200,201]).to.include(pm.response.code));"] } } ],
+          "request": { "method": "POST", "header": [ {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw": "{\n  \"name\": \"Отделка Z\",\n  \"objectId\": {{object_id}}\n}" }, "url": { "raw": "{{base_url}}/api/stages", "host":["{{base_url}}"], "path":["api","stages"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Defects",
+      "item": [
+        {
+          "name": "3.1 List defects & capture id",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));","const arr = pm.response.json(); pm.expect(arr).to.be.an('array'); if(arr.length) pm.collectionVariables.set('defect_id', arr[0].id);"] } } ],
+          "request": { "method":"GET", "header": [], "url": { "raw":"{{base_url}}/api/defects", "host":["{{base_url}}"], "path":["api","defects"] } },
+          "response": []
+        },
+        {
+          "name": "3.2 Create defect",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('200/201', () => pm.expect([200,201]).to.include(pm.response.code));","const j=pm.response.json(); pm.expect(j.id).to.exist; pm.collectionVariables.set('defect_id_new', j.id);"] } } ],
+          "request": {
+            "method": "POST",
+            "header": [ {"key":"Content-Type","value":"application/json"} ],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Дефект из Postman\",\n  \"description\": \"Тестовый дефект\",\n  \"priority\": \"medium\",\n  \"projectId\": {{project_id}},\n  \"objectId\": {{object_id}},\n  \"stageId\": {{stage_id}}\n}" },
+            "url": { "raw": "{{base_url}}/api/defects", "host":["{{base_url}}"], "path":["api","defects"] }
+          },
+          "response": []
+        },
+        {
+          "name": "3.3 Get defect by id",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('200', () => pm.response.to.have.status(200));","const j=pm.response.json(); pm.expect(j).to.be.an('object');"] } } ],
+          "request": { "method":"GET", "header": [], "url": { "raw":"{{base_url}}/api/defects/{{defect_id}}", "host":["{{base_url}}"], "path":["api","defects","{{defect_id}}"] } },
+          "response": []
+        },
+        {
+          "name": "3.4 Patch defect status -> in_progress",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('200', () => pm.response.to.have.status(200));"] } } ],
+          "request": { "method":"PATCH", "header": [ {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw":"{\n  \"status\": \"in_progress\"\n}" }, "url": { "raw":"{{base_url}}/api/defects/{{defect_id}}", "host":["{{base_url}}"], "path":["api","defects","{{defect_id}}"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Comments & Files & History",
+      "item": [
+        {
+          "name": "4.1 Add comment",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('200/201', () => pm.expect([200,201]).to.include(pm.response.code));"] } } ],
+          "request": { "method":"POST", "header":[ {"key":"Content-Type","value":"application/json"} ], "body": { "mode":"raw", "raw":"{\n  \"content\": \"Комментарий из Postman\"\n}" }, "url": { "raw":"{{base_url}}/api/defects/{{defect_id}}/comments", "host":["{{base_url}}"], "path":["api","defects","{{defect_id}}","comments"] } },
+          "response": []
+        },
+        {
+          "name": "4.2 List comments",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('200', () => pm.response.to.have.status(200));","const arr=pm.response.json(); pm.expect(arr).to.be.an('array');"] } } ],
+          "request": { "method":"GET", "header": [], "url": { "raw":"{{base_url}}/api/defects/{{defect_id}}/comments", "host":["{{base_url}}"], "path":["api","defects","{{defect_id}}","comments"] } },
+          "response": []
+        },
+        {
+          "name": "4.3 Upload file (attach any file as 'file')",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('200/201', () => pm.expect([200,201]).to.include(pm.response.code));"] } } ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/defects/{{defect_id}}/files", "host":["{{base_url}}"], "path":["api","defects","{{defect_id}}","files"] }
+          },
+          "response": []
+        },
+        {
+          "name": "4.4 List files",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('200', () => pm.response.to.have.status(200));","const arr=pm.response.json(); pm.expect(arr).to.be.an('array');"] } } ],
+          "request": { "method":"GET", "header": [], "url": { "raw":"{{base_url}}/api/defects/{{defect_id}}/files", "host":["{{base_url}}"], "path":["api","defects","{{defect_id}}","files"] } },
+          "response": []
+        },
+        {
+          "name": "4.5 History",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('200', () => pm.response.to.have.status(200));","const arr=pm.response.json(); pm.expect(arr).to.be.an('array');"] } } ],
+          "request": { "method":"GET", "header": [], "url": { "raw":"{{base_url}}/api/defects/{{defect_id}}/history", "host":["{{base_url}}"], "path":["api","defects","{{defect_id}}","history"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Reports",
+      "item": [
+        {
+          "name": "5.1 Export CSV",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('200', () => pm.response.to.have.status(200));","pm.test('CSV', () => pm.expect(pm.response.headers.get('content-type')).to.include('text/csv'));"] } } ],
+          "request": { "method":"GET", "header": [], "url": { "raw":"{{base_url}}/api/reports/defects/export?format=csv", "host":["{{base_url}}"], "path":["api","reports","defects","export"], "query":[{"key":"format","value":"csv"}] } },
+          "response": []
+        },
+        {
+          "name": "5.2 Export XLSX",
+          "event": [ { "listen":"test", "script": { "type":"text/javascript", "exec": ["pm.test('200', () => pm.response.to.have.status(200));","pm.test('XLSX', () => pm.expect(pm.response.headers.get('content-type')).to.include('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));"] } } ],
+          "request": { "method":"GET", "header": [], "url": { "raw":"{{base_url}}/api/reports/defects/export?format=xlsx", "host":["{{base_url}}"], "path":["api","reports","defects","export"], "query":[{"key":"format","value":"xlsx"}] } },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000", "type": "string" },
+    { "key": "project_id", "value": "", "type": "string" },
+    { "key": "object_id", "value": "", "type": "string" },
+    { "key": "stage_id", "value": "", "type": "string" },
+    { "key": "defect_id", "value": "", "type": "string" },
+    { "key": "defect_id_new", "value": "", "type": "string" },
+    { "key": "admin_email", "value": "admin@demo.local", "type": "string" },
+    { "key": "demo_password", "value": "demo1234", "type": "string" }
+  ]
+}
