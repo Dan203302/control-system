@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { defects, defectHistory } from '@/db/schema'
+import { defects, defectHistory, users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getSession, allowRoles } from '@/lib/auth'
 
@@ -23,7 +23,13 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const id = Number(p.id)
   const rows = await db.select().from(defects).where(eq(defects.id, id)).limit(1)
   if (rows.length === 0) return NextResponse.json({ error: 'not_found' }, { status: 404 })
-  return NextResponse.json(rows[0])
+  const row = rows[0] as any
+  let assigneeName: string | null = null
+  if (row.assigneeId) {
+    const u = await db.select({ fullName: users.fullName }).from(users).where(eq(users.id, row.assigneeId)).limit(1)
+    assigneeName = u.length ? (u[0].fullName as string) : null
+  }
+  return NextResponse.json({ ...row, assigneeName })
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

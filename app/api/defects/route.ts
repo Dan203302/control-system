@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { defects, defectHistory } from '@/db/schema'
+import { defects, defectHistory, users } from '@/db/schema'
 import { and, eq, sql, asc, desc } from 'drizzle-orm'
 import { getSession, allowRoles } from '@/lib/auth'
 
@@ -35,7 +35,26 @@ export async function GET(req: Request) {
   if (search) conditions.push(sql`lower(${defects.title}) like ${'%' + search.toLowerCase() + '%'}`)
   const where = conditions.length ? and(...conditions) : undefined
   const order = sortBy === 'due_date' ? (sortDir === 'asc' ? asc(defects.dueDate) : desc(defects.dueDate)) : sortBy === 'priority' ? (sortDir === 'asc' ? asc(defects.priority) : desc(defects.priority)) : sortDir === 'asc' ? asc(defects.createdAt) : desc(defects.createdAt)
-  const items = await db.select().from(defects).where(where as any).orderBy(order).limit(limit).offset(offset)
+  const items = await db
+    .select({
+      id: defects.id,
+      title: defects.title,
+      status: defects.status,
+      priority: defects.priority,
+      projectId: defects.projectId,
+      objectId: defects.objectId,
+      stageId: defects.stageId,
+      assigneeId: defects.assigneeId,
+      assigneeName: users.fullName,
+      dueDate: defects.dueDate,
+      createdAt: defects.createdAt,
+    })
+    .from(defects)
+    .leftJoin(users, eq(users.id, defects.assigneeId))
+    .where(where as any)
+    .orderBy(order)
+    .limit(limit)
+    .offset(offset)
   return NextResponse.json({ items, page, limit })
 }
 

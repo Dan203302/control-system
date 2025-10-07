@@ -21,6 +21,7 @@ type Row = {
   objectId: number
   stageId: number | null
   assigneeId: string | null
+  assigneeName?: string | null
   dueDate: string | null
   createdAt: string
 }
@@ -37,6 +38,14 @@ const statuses = [
   { key: "closed", label: "Закрыта" },
   { key: "cancelled", label: "Отменена" },
 ]
+
+const statusLabels: Record<string, string> = {
+  new: "Новая",
+  in_progress: "В работе",
+  review: "На проверке",
+  closed: "Закрыта",
+  cancelled: "Отменена",
+}
 
 const priorities = [
   { key: "low", label: "Низкий" },
@@ -258,12 +267,12 @@ export default function Page() {
                       {item.title}
                     </Link>
                   </TableCell>
-                  <TableCell><Chip color={statusColor(item.status)} size="sm" variant="flat">{item.status}</Chip></TableCell>
+                  <TableCell><Chip color={statusColor(item.status)} size="sm" variant="flat">{statusLabels[item.status] || item.status}</Chip></TableCell>
                   <TableCell>{item.priority}</TableCell>
                   <TableCell>{item.projectId}</TableCell>
                   <TableCell>{item.objectId}</TableCell>
                   <TableCell>{item.stageId ?? ""}</TableCell>
-                  <TableCell className="truncate max-w-[160px]">{item.assigneeId ?? ""}</TableCell>
+                  <TableCell className="truncate max-w-[200px]">{item.assigneeName || (users.find(u => u.id === (item.assigneeId || ""))?.fullName) || ""}</TableCell>
                   <TableCell>{item.dueDate ? new Date(item.dueDate).toLocaleDateString() : ""}</TableCell>
                   <TableCell>{item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}</TableCell>
                   <TableCell>
